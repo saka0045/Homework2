@@ -10,7 +10,12 @@ def main():
         help="Path to sequence file 1"
     )
     parser.add_argument(
-        "-b", dest="second_sequence_file", required=True
+        "-b", dest="second_sequence_file", required=True,
+        help="Path to sequence file 2"
+    )
+    parser.add_argument(
+        "-t", dest="text_file", required=False,
+        help="Path to the matchers.txt, having this argument will enable the anchored global alignment"
     )
 
     args = parser.parse_args()
@@ -22,21 +27,46 @@ def main():
     first_sequence, first_sequence_length = extract_sequence(first_sequence_file_path)
     second_sequence, second_sequence_length = extract_sequence(second_sequence_file_path)
 
-    print("first sequence")
-    print(first_sequence)
-    print(first_sequence_length)
-    print("second sequence")
-    print(second_sequence)
-    print(second_sequence_length)
+    if args.text_file is not None:
+        print("Performing anchored global alignment")
+        text_file_path = os.path.abspath(args.text_file)
+        print("Using text file to retrieve start and stop position at: " + text_file_path)
 
-    alignment_score, first_aligned_sequence, second_aligned_sequence = needleman_wunsch_algorithm(first_sequence,
-                                                                                                  first_sequence_length,
-                                                                                                  second_sequence,
-                                                                                                  second_sequence_length)
+        text_file = open(text_file_path, "r")
+        list_of_coordinates = []
+        for line in text_file:
+            # Remove any "\n" at the end of line
+            line = line.rstrip()
+            coordinates_per_line = line.split("\t")
+            # Convert the coordinates to integers
+            coordinates_per_line = list(map(int, coordinates_per_line))
+            # Convert the coordinates to 0 based coordinate to subset the string of sequences
+            corrected_coordinates = []
+            for coordinate in coordinates_per_line:
+                coordinate = coordinate - 1
+                corrected_coordinates.append(coordinate)
+            list_of_coordinates.append(corrected_coordinates)
 
-    print("Alignment score is :" + str(alignment_score))
-    print(first_aligned_sequence)
-    print(second_aligned_sequence)
+        text_file.close()
+
+        print(list_of_coordinates)
+
+    else:
+        print("first sequence")
+        print(first_sequence)
+        print(first_sequence_length)
+        print("second sequence")
+        print(second_sequence)
+        print(second_sequence_length)
+
+        alignment_score, first_aligned_sequence, second_aligned_sequence = needleman_wunsch_algorithm(first_sequence,
+                                                                                                      first_sequence_length,
+                                                                                                      second_sequence,
+                                                                                                      second_sequence_length)
+
+        print("Alignment score is :" + str(alignment_score))
+        print(first_aligned_sequence)
+        print(second_aligned_sequence)
 
 
 def needleman_wunsch_algorithm(first_sequence, first_sequence_length, second_sequence, second_sequence_length):
