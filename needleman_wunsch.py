@@ -29,29 +29,43 @@ def main():
     print(second_sequence)
     print(second_sequence_length)
 
+    alignment_score, first_aligned_sequence, second_aligned_sequence = needleman_wunsch_algorithm(first_sequence,
+                                                                                                  first_sequence_length,
+                                                                                                  second_sequence,
+                                                                                                  second_sequence_length)
+
+    print("Alignment score is :" + str(alignment_score))
+    print(first_aligned_sequence)
+    print(second_aligned_sequence)
+
+
+def needleman_wunsch_algorithm(first_sequence, first_sequence_length, second_sequence, second_sequence_length):
+    """
+    Performs global alignment using the Needleman-Wunsch algorithm
+    :param first_sequence:
+    :param first_sequence_length:
+    :param second_sequence:
+    :param second_sequence_length:
+    :return: Aligned sequences and the alignment score
+    """
     # Initialize the score matrix with zeros
     score_matrix = np.zeros([first_sequence_length + 1, second_sequence_length + 1], dtype=int)
     traceback_matrix = np.empty([first_sequence_length + 1, second_sequence_length + 1], dtype=object)
-
     # Scoring criteria
     match = 1
     mismatch = -3
     gap_penalty = -2
-
     # Fill out the first column of each row with increasing gap penalty for score matrix
     # Fill out the first column of each row with "up" for traceback matrix
     for row in range(0, first_sequence_length + 1):
         score_matrix[row][0] = gap_penalty * row
         traceback_matrix[row][0] = "up"
-
     # Repeat for first row in each column for score matrix and fill out "left" for traceback matrix
     for column in range(0, second_sequence_length + 1):
         score_matrix[0][column] = gap_penalty * column
         traceback_matrix[0][column] = "left"
-
     # Fill out the first cell for traceback matrix
     traceback_matrix[0][0] = "start"
-
     # Calculate the score for the gut of the matrix
     for row in range(1, first_sequence_length + 1):
         for column in range(1, second_sequence_length + 1):
@@ -59,46 +73,52 @@ def main():
                                                       mismatch, gap_penalty, score_matrix)
             score_matrix[row][column] = score
             traceback_matrix[row][column] = direction
-
-    print(score_matrix)
-    print(traceback_matrix)
-
+    # Get the alignment score
+    alignment_score = score_matrix[first_sequence_length][second_sequence_length]
+    # print(score_matrix)
+    # print(traceback_matrix)
     # Traceback
+    # Set and initialize the traceback conditions
     i = first_sequence_length
     j = second_sequence_length
     first_aligned_sequence = ""
     second_aligned_sequence = ""
-
+    # Start at the bottom right corner of the traceback_matrix
+    # While loop before it reaches any of the sides or the top left corner
     while i > 0 and j > 0:
+        # If the direction is diagonal, add the corresponding sequence from both sequences
         if traceback_matrix[i][j] == "diagonal":
             first_aligned_sequence += first_sequence[i - 1]
             second_aligned_sequence += second_sequence[j - 1]
             i -= 1
             j -= 1
+        # If the direction is left, add a gap to the first sequence (on the side of table)
+        # but take the sequence from the second sequence (on the top of the table)
         elif traceback_matrix[i][j] == "left":
             first_aligned_sequence += "-"
             second_aligned_sequence += second_sequence[j - 1]
             j -= 1
+        # If the direction is up, take the sequence from the first sequence and add a gap to the second sequence
         elif traceback_matrix[i][j] == "up":
             first_aligned_sequence += first_sequence[i - 1]
             second_aligned_sequence += "-"
             i -= 1
-
+    # If it reached the left end of the table, add the corresponding sequence to the first sequence and add a gap
+    # to the second sequence and move up
     while i > 0:
         first_aligned_sequence += first_sequence[i - 1]
         second_aligned_sequence += "-"
         i -= 1
-
+    # If it reached the top of the table, add a gap to the first sequence and add the corresponding sequence from the
+    # second sequence and move left
     while j > 0:
         first_aligned_sequence += "-"
         second_aligned_sequence += second_sequence[j - 1]
         j -= 1
-
+    # Invert the sequences since we started at the end
     first_aligned_sequence = first_aligned_sequence[::-1]
     second_aligned_sequence = second_aligned_sequence[::-1]
-
-    print(first_aligned_sequence)
-    print(second_aligned_sequence)
+    return alignment_score, first_aligned_sequence, second_aligned_sequence
 
 
 def calculate_matrix_score(first_sequence, row, second_sequence, column, match, mismatch, gap_penalty, score_matrix):
@@ -134,7 +154,7 @@ def calculate_matrix_score(first_sequence, row, second_sequence, column, match, 
         direction = "left"
     elif up_score == score:
         direction = "up"
-    print("out of " + str(diagonal_score) + ", " + str(up_score) + ", " + str(left_score) + ", max is " + str(score))
+    #print("out of " + str(diagonal_score) + ", " + str(up_score) + ", " + str(left_score) + ", max is " + str(score))
     return score, direction
 
 
