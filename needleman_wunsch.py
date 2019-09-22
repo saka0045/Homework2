@@ -32,41 +32,113 @@ def main():
         text_file_path = os.path.abspath(args.text_file)
         print("Using text file to retrieve start and stop position at: " + text_file_path)
 
+        print("Aligning the following sequences using anchored Needleman-Wunsch algorithm")
+        print("First sequence:")
+        print(first_sequence)
+        print("Second sequence:")
+        print(second_sequence)
+
         text_file = open(text_file_path, "r")
-        list_of_coordinates = []
-        for line in text_file:
-            # Remove any "\n" at the end of line
-            line = line.rstrip()
-            coordinates_per_line = line.split("\t")
-            # Convert the coordinates to integers
-            coordinates_per_line = list(map(int, coordinates_per_line))
-            # Convert the coordinates to 0 based coordinate to subset the string of sequences
-            corrected_coordinates = []
-            for coordinate in coordinates_per_line:
-                coordinate = coordinate - 1
-                corrected_coordinates.append(coordinate)
-            list_of_coordinates.append(corrected_coordinates)
+        anchored_alignement_score, anchored_first_aligned_sequence, anchored_second_aligned_sequence = anchored_needleman_wunsch(
+            first_sequence, first_sequence_length, second_sequence, second_sequence_length, text_file)
+
+        print("Alignment score is :" + str(anchored_alignement_score))
+        print("Aligned sequences using anchored Needleman-Wunsch:")
+        print(anchored_first_aligned_sequence)
+        print(anchored_second_aligned_sequence)
 
         text_file.close()
 
-        print(list_of_coordinates)
-
+    # If no -t argument, proceed with non-anchored Needleman-Wunsch
     else:
-        print("first sequence")
+        print("Aligning the following sequences using Needleman-Wunsch algorithm")
+        print("First sequence:")
         print(first_sequence)
-        print(first_sequence_length)
-        print("second sequence")
+        print("Second sequence:")
         print(second_sequence)
-        print(second_sequence_length)
 
+        # Align using non-anchored version of Needleman-Wunsch
         alignment_score, first_aligned_sequence, second_aligned_sequence = needleman_wunsch_algorithm(first_sequence,
                                                                                                       first_sequence_length,
                                                                                                       second_sequence,
                                                                                                       second_sequence_length)
 
         print("Alignment score is :" + str(alignment_score))
+        print("Aligned sequences using non-anchored Needleman-Wunsch:")
         print(first_aligned_sequence)
         print(second_aligned_sequence)
+
+
+def anchored_needleman_wunsch(first_sequence, first_sequence_length, second_sequence, second_sequence_length,
+                              text_file):
+    """
+    Performs the anchored Needleman-Wunsch, requires -t argument when invoking this script
+    :param first_sequence:
+    :param first_sequence_length:
+    :param second_sequence:
+    :param second_sequence_length:
+    :param text_file:
+    :return: Returns the alignment score and the sequences using anchored Needleman-Wunsch
+    """
+    # Store the start and stop positions in a list
+    list_of_coordinates = []
+    for line in text_file:
+        # Remove any "\n" at the end of line
+        line = line.rstrip()
+        coordinates_per_line = line.split("\t")
+        # Convert the coordinates to integers
+        coordinates_per_line = list(map(int, coordinates_per_line))
+        list_of_coordinates.append(coordinates_per_line)
+    print("Coordinates of matched regions:")
+    print(list_of_coordinates)
+    # Initialize for anchored global alignment
+    first_sequence_starting_position = 0
+    second_sequence_starting_position = 0
+    anchored_alignement_score = 0
+    anchored_first_aligned_sequence = ""
+    anchored_second_aligned_sequence = ""
+    for coordinates in list_of_coordinates:
+        # Align the sequences before the set of coordinated with Needleman-Wunsch
+        (alignment_score, first_aligned_sequence,
+         second_aligned_sequence) = needleman_wunsch_algorithm(
+            first_sequence[first_sequence_starting_position:coordinates[0] - 1],
+            coordinates[0] - first_sequence_starting_position - 1,
+            second_sequence[second_sequence_starting_position:coordinates[2] - 1],
+            coordinates[2] - second_sequence_starting_position - 1)
+
+        # Add the alignment score and extend the aligned sequence
+        anchored_alignement_score += alignment_score
+        anchored_first_aligned_sequence += first_aligned_sequence
+        anchored_second_aligned_sequence += second_aligned_sequence
+
+        # Extract the matched region from the sequence
+        first_matched_region = first_sequence[coordinates[0] - 1:coordinates[1]]
+        secon_matched_region = second_sequence[coordinates[2] - 1:coordinates[3]]
+        print("Extracting the following matched regions")
+        print(first_matched_region)
+        print(secon_matched_region)
+        # Calculate the alignment score for the matched region
+        anchored_alignement_score += len(first_matched_region) * 1
+        # Add the matched region to the aligned sequence
+        anchored_first_aligned_sequence += first_matched_region
+        anchored_second_aligned_sequence += secon_matched_region
+
+        # Move the starting positions to so the next loop can start where the matched region left off
+        first_sequence_starting_position = coordinates[1]
+        second_sequence_starting_position = coordinates[3]
+    # Align the rest of the sequence using Needleman-Wunsch
+    (last_alignment_score,
+     last_first_alignment_sequence,
+     last_second_alignment_sequence) = needleman_wunsch_algorithm(
+        first_sequence[first_sequence_starting_position:first_sequence_length],
+        first_sequence_length - first_sequence_starting_position,
+        second_sequence[second_sequence_starting_position:second_sequence_length],
+        second_sequence_length - second_sequence_starting_position)
+    # Calculate the alignment score of the last region and add the sequences to the aligned sequence
+    anchored_alignement_score += last_alignment_score
+    anchored_first_aligned_sequence += last_first_alignment_sequence
+    anchored_second_aligned_sequence += last_second_alignment_sequence
+    return anchored_alignement_score, anchored_first_aligned_sequence, anchored_second_aligned_sequence
 
 
 def needleman_wunsch_algorithm(first_sequence, first_sequence_length, second_sequence, second_sequence_length):
