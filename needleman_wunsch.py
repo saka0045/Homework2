@@ -98,13 +98,18 @@ def anchored_needleman_wunsch(first_sequence, first_sequence_length, second_sequ
     anchored_first_aligned_sequence = ""
     anchored_second_aligned_sequence = ""
     for coordinates in list_of_coordinates:
-        # Align the sequences before the set of coordinated with Needleman-Wunsch
+        # Align the sequences before the set of coordinates with Needleman-Wunsch
+        first_sequence_to_align = first_sequence[first_sequence_starting_position:coordinates[0] - 1]
+        second_sequence_to_align = second_sequence[second_sequence_starting_position:coordinates[2] - 1]
+        print("Aligning the following sequences using Needleman-Wunsch:")
+        print(first_sequence_to_align)
+        print(second_sequence_to_align)
         (alignment_score, first_aligned_sequence,
-         second_aligned_sequence) = needleman_wunsch_algorithm(
-            first_sequence[first_sequence_starting_position:coordinates[0] - 1],
-            coordinates[0] - first_sequence_starting_position - 1,
-            second_sequence[second_sequence_starting_position:coordinates[2] - 1],
-            coordinates[2] - second_sequence_starting_position - 1)
+         second_aligned_sequence) = needleman_wunsch_algorithm(first_sequence_to_align,len(first_sequence_to_align),
+                                                               second_sequence_to_align,len(second_sequence_to_align))
+        print("Aligned sequences:")
+        print(first_aligned_sequence)
+        print(second_aligned_sequence)
 
         # Add the alignment score and extend the aligned sequence
         anchored_alignement_score += alignment_score
@@ -127,13 +132,18 @@ def anchored_needleman_wunsch(first_sequence, first_sequence_length, second_sequ
         first_sequence_starting_position = coordinates[1]
         second_sequence_starting_position = coordinates[3]
     # Align the rest of the sequence using Needleman-Wunsch
+    rest_of_first_sequence = first_sequence[first_sequence_starting_position:first_sequence_length]
+    rest_of_second_sequence = second_sequence[second_sequence_starting_position:second_sequence_length]
+    print("Aligning the rest of the sequence using Needleman-Wunsch:")
+    print(rest_of_first_sequence)
+    print(rest_of_second_sequence)
     (last_alignment_score,
      last_first_alignment_sequence,
-     last_second_alignment_sequence) = needleman_wunsch_algorithm(
-        first_sequence[first_sequence_starting_position:first_sequence_length],
-        first_sequence_length - first_sequence_starting_position,
-        second_sequence[second_sequence_starting_position:second_sequence_length],
-        second_sequence_length - second_sequence_starting_position)
+     last_second_alignment_sequence) = needleman_wunsch_algorithm(rest_of_first_sequence,len(rest_of_first_sequence),
+                                                                  rest_of_second_sequence, len(rest_of_second_sequence))
+    print("Aligned sequence:")
+    print(last_first_alignment_sequence)
+    print(last_second_alignment_sequence)
     # Calculate the alignment score of the last region and add the sequences to the aligned sequence
     anchored_alignement_score += last_alignment_score
     anchored_first_aligned_sequence += last_first_alignment_sequence
