@@ -27,6 +27,11 @@ def main():
     first_sequence, first_sequence_length = extract_sequence(first_sequence_file_path)
     second_sequence, second_sequence_length = extract_sequence(second_sequence_file_path)
 
+    # Scoring criteria
+    match = 1
+    mismatch = -3
+    gap_penalty = -2
+
     if args.text_file is not None:
         print("Performing anchored global alignment")
         text_file_path = os.path.abspath(args.text_file)
@@ -40,11 +45,12 @@ def main():
 
         text_file = open(text_file_path, "r")
         anchored_alignement_score, anchored_first_aligned_sequence, anchored_second_aligned_sequence = anchored_needleman_wunsch(
-            first_sequence, first_sequence_length, second_sequence, second_sequence_length, text_file)
+            first_sequence, first_sequence_length, second_sequence, second_sequence_length, text_file, match, mismatch,
+        gap_penalty)
 
         print("Alignment score is :" + str(anchored_alignement_score))
-        print("Aligned sequences using anchored Needleman-Wunsch:")
-        print(anchored_first_aligned_sequence)
+        print("Aligned sequences using anchored Needleman-Wunsch:\n")
+        print(anchored_first_aligned_sequence + "\n")
         print(anchored_second_aligned_sequence)
 
         text_file.close()
@@ -61,16 +67,18 @@ def main():
         alignment_score, first_aligned_sequence, second_aligned_sequence = needleman_wunsch_algorithm(first_sequence,
                                                                                                       first_sequence_length,
                                                                                                       second_sequence,
-                                                                                                      second_sequence_length)
+                                                                                                      second_sequence_length,
+                                                                                                      match, mismatch,
+                                                                                                      gap_penalty)
 
         print("Alignment score is :" + str(alignment_score))
-        print("Aligned sequences using non-anchored Needleman-Wunsch:")
-        print(first_aligned_sequence)
+        print("Aligned sequences using non-anchored Needleman-Wunsch:\n")
+        print(first_aligned_sequence + "\n")
         print(second_aligned_sequence)
 
 
 def anchored_needleman_wunsch(first_sequence, first_sequence_length, second_sequence, second_sequence_length,
-                              text_file):
+                              text_file, match, mismatch, gap_penalty):
     """
     Performs the anchored Needleman-Wunsch, requires -t argument when invoking this script
     :param first_sequence:
@@ -103,13 +111,14 @@ def anchored_needleman_wunsch(first_sequence, first_sequence_length, second_sequ
         second_sequence_to_align = second_sequence[second_sequence_starting_position:coordinates[2] - 1]
         print("Aligning the following sequences using Needleman-Wunsch:")
         print(first_sequence_to_align)
-        print(second_sequence_to_align)
+        print(second_sequence_to_align + "\n")
         (alignment_score, first_aligned_sequence,
          second_aligned_sequence) = needleman_wunsch_algorithm(first_sequence_to_align,len(first_sequence_to_align),
-                                                               second_sequence_to_align,len(second_sequence_to_align))
+                                                               second_sequence_to_align,len(second_sequence_to_align),
+                                                               match, mismatch, gap_penalty)
         print("Aligned sequences:")
         print(first_aligned_sequence)
-        print(second_aligned_sequence)
+        print(second_aligned_sequence + "\n")
 
         # Add the alignment score and extend the aligned sequence
         anchored_alignement_score += alignment_score
@@ -121,7 +130,7 @@ def anchored_needleman_wunsch(first_sequence, first_sequence_length, second_sequ
         secon_matched_region = second_sequence[coordinates[2] - 1:coordinates[3]]
         print("Extracting the following matched regions")
         print(first_matched_region)
-        print(secon_matched_region)
+        print(secon_matched_region + "\n")
         # Calculate the alignment score for the matched region
         anchored_alignement_score += len(first_matched_region) * 1
         # Add the matched region to the aligned sequence
@@ -136,14 +145,15 @@ def anchored_needleman_wunsch(first_sequence, first_sequence_length, second_sequ
     rest_of_second_sequence = second_sequence[second_sequence_starting_position:second_sequence_length]
     print("Aligning the rest of the sequence using Needleman-Wunsch:")
     print(rest_of_first_sequence)
-    print(rest_of_second_sequence)
+    print(rest_of_second_sequence + "\n")
     (last_alignment_score,
      last_first_alignment_sequence,
      last_second_alignment_sequence) = needleman_wunsch_algorithm(rest_of_first_sequence,len(rest_of_first_sequence),
-                                                                  rest_of_second_sequence, len(rest_of_second_sequence))
+                                                                  rest_of_second_sequence, len(rest_of_second_sequence),
+                                                                  match, mismatch, gap_penalty)
     print("Aligned sequence:")
     print(last_first_alignment_sequence)
-    print(last_second_alignment_sequence)
+    print(last_second_alignment_sequence + "\n")
     # Calculate the alignment score of the last region and add the sequences to the aligned sequence
     anchored_alignement_score += last_alignment_score
     anchored_first_aligned_sequence += last_first_alignment_sequence
@@ -151,7 +161,8 @@ def anchored_needleman_wunsch(first_sequence, first_sequence_length, second_sequ
     return anchored_alignement_score, anchored_first_aligned_sequence, anchored_second_aligned_sequence
 
 
-def needleman_wunsch_algorithm(first_sequence, first_sequence_length, second_sequence, second_sequence_length):
+def needleman_wunsch_algorithm(first_sequence, first_sequence_length, second_sequence, second_sequence_length,
+                               match, mismatch, gap_penalty):
     """
     Performs global alignment using the Needleman-Wunsch algorithm
     :param first_sequence:
@@ -163,10 +174,7 @@ def needleman_wunsch_algorithm(first_sequence, first_sequence_length, second_seq
     # Initialize the score matrix with zeros
     score_matrix = np.zeros([first_sequence_length + 1, second_sequence_length + 1], dtype=int)
     traceback_matrix = np.empty([first_sequence_length + 1, second_sequence_length + 1], dtype=object)
-    # Scoring criteria
-    match = 1
-    mismatch = -3
-    gap_penalty = -2
+
     # Fill out the first column of each row with increasing gap penalty for score matrix
     # Fill out the first column of each row with "up" for traceback matrix
     for row in range(0, first_sequence_length + 1):
