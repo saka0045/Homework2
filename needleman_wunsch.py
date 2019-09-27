@@ -127,15 +127,15 @@ def anchored_needleman_wunsch(first_sequence, first_sequence_length, second_sequ
 
         # Extract the matched region from the sequence
         first_matched_region = first_sequence[coordinates[0] - 1:coordinates[1]]
-        secon_matched_region = second_sequence[coordinates[2] - 1:coordinates[3]]
+        second_matched_region = second_sequence[coordinates[2] - 1:coordinates[3]]
         print("Extracting the following matched regions")
         print(first_matched_region)
-        print(secon_matched_region + "\n")
+        print(second_matched_region + "\n")
         # Calculate the alignment score for the matched region
-        anchored_alignement_score += len(first_matched_region) * 1
+        anchored_alignement_score += len(first_matched_region) * match
         # Add the matched region to the aligned sequence
         anchored_first_aligned_sequence += first_matched_region
-        anchored_second_aligned_sequence += secon_matched_region
+        anchored_second_aligned_sequence += second_matched_region
 
         # Move the starting positions to so the next loop can start where the matched region left off
         first_sequence_starting_position = coordinates[1]
