@@ -1,3 +1,11 @@
+"""
+This script will apply either the Needleman-Wunsch or the anchored Needleman-Wunsch algorithm on a pair of sequences
+
+Discussed homework with Jeannette Rustin
+"""
+
+__author__ = "Yuta Sakai"
+
 import argparse
 import os
 import numpy as np
@@ -15,11 +23,14 @@ def main():
     )
     parser.add_argument(
         "-t", dest="text_file", required=False,
-        help="Path to the matchers.txt, having this argument will enable the anchored global alignment"
+        help="Path to the matchers.txt, having this argument will enable the anchored global alignment. "
+             "If the matcher file is given, the order of the sequence arguments must match the column order of the "
+             "matcher file"
     )
 
     args = parser.parse_args()
 
+    # Get the path to the sequence files
     first_sequence_file_path = os.path.abspath(args.first_sequence_file)
     second_sequence_file_path = os.path.abspath(args.second_sequence_file)
 
@@ -32,8 +43,10 @@ def main():
     mismatch = -3
     gap_penalty = -2
 
+    # If -t argument is given (match text file), use anchored Needleman-Wunsch
     if args.text_file is not None:
         print("Performing anchored global alignment")
+        # Get the path to the matcher text file
         text_file_path = os.path.abspath(args.text_file)
         print("Using text file to retrieve start and stop position at: " + text_file_path)
 
@@ -44,6 +57,7 @@ def main():
         print(second_sequence)
 
         text_file = open(text_file_path, "r")
+        # Perform anchored Needleman-Wunsch algorithm
         anchored_alignement_score, anchored_first_aligned_sequence, anchored_second_aligned_sequence = anchored_needleman_wunsch(
             first_sequence, first_sequence_length, second_sequence, second_sequence_length, text_file, match, mismatch,
         gap_penalty)
@@ -81,6 +95,7 @@ def anchored_needleman_wunsch(first_sequence, first_sequence_length, second_sequ
                               text_file, match, mismatch, gap_penalty):
     """
     Performs the anchored Needleman-Wunsch, requires -t argument when invoking this script
+    The order of the sequence file must match the order of the columns the coordinates represent
     :param first_sequence:
     :param first_sequence_length:
     :param second_sequence:
@@ -107,6 +122,7 @@ def anchored_needleman_wunsch(first_sequence, first_sequence_length, second_sequ
     anchored_second_aligned_sequence = ""
     for coordinates in list_of_coordinates:
         # Align the sequences before the set of coordinates with Needleman-Wunsch
+        # Subtract 1 from the start coordinate to account for 0 based index for python strings
         first_sequence_to_align = first_sequence[first_sequence_starting_position:coordinates[0] - 1]
         second_sequence_to_align = second_sequence[second_sequence_starting_position:coordinates[2] - 1]
         print("Aligning the following sequences using Needleman-Wunsch:")
@@ -126,6 +142,7 @@ def anchored_needleman_wunsch(first_sequence, first_sequence_length, second_sequ
         anchored_second_aligned_sequence += second_aligned_sequence
 
         # Extract the matched region from the sequence
+        # To start at the coordinate, subtract 1 to account for 0 based index
         first_matched_region = first_sequence[coordinates[0] - 1:coordinates[1]]
         second_matched_region = second_sequence[coordinates[2] - 1:coordinates[3]]
         print("Extracting the following matched regions")

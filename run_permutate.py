@@ -1,3 +1,12 @@
+"""
+Script to randomly permutate the pair of sequences and align them using Needleman-Wunsch 10,000 times
+Returns the alignment score for each alignment try
+
+Discussed homework with Jeannette Rustin
+"""
+
+__author__ = "Yuta Sakai"
+
 import argparse
 import os
 import random
@@ -21,6 +30,7 @@ def main():
 
     args = parser.parse_args()
 
+    # Get file path from arguments
     first_sequence_file_path = os.path.abspath(args.first_sequence_file)
     second_sequence_file_path = os.path.abspath(args.second_sequence_file)
     out_file_path = os.path.abspath(args.out_file)
